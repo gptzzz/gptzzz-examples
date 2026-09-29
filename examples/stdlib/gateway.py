@@ -17,6 +17,7 @@ from urllib import error, parse, request
 DEFAULT_BASE_URL = "https://gptzzz.ai/v1"
 DEFAULT_TIMEOUT = 30.0
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
+USER_AGENT = "gptzzz-examples/2.0 (+https://github.com/gptzzz/gptzzz-examples)"
 
 
 class GatewayError(Exception):
@@ -131,7 +132,9 @@ class GatewayClient:
 
     def _request_json(self, path: str, payload=None):
         headers = {"Authorization": "Bearer " + self._api_key,
-                   "Accept": "application/json"}
+                   "Accept": "application/json",
+                   # urllib's default "Python-urllib/3.x" is blocked by some CDN bot rules.
+                   "User-Agent": USER_AGENT}
         body = None
         method = "GET"
         if payload is not None:

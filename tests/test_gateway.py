@@ -1,4 +1,7 @@
-"""Local HTTP stub tests only: no real API Key, gateway calls, or billing."""
+"""Tests for the zero-dependency client in examples/stdlib/.
+
+Local HTTP stub only: no real API key, no gateway calls, no billing.
+"""
 
 from contextlib import contextmanager
 import json
@@ -15,7 +18,7 @@ from unittest.mock import patch
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT / "scripts"))
+sys.path.insert(0, str(PROJECT / "examples" / "stdlib"))
 from gateway import GatewayClient, GatewayError, model_from_env, normalize_base_url
 
 
@@ -79,7 +82,7 @@ class GatewayTests(unittest.TestCase):
             env.pop("GPTZZZ_MODEL", None)
         else:
             env["GPTZZZ_MODEL"] = model
-        return subprocess.run([sys.executable, "-B", str(PROJECT / "scripts" / script), *extra],
+        return subprocess.run([sys.executable, "-B", str(PROJECT / "examples" / "stdlib" / script), *extra],
                               env=env, text=True, capture_output=True, timeout=5)
 
     def setUp(self):

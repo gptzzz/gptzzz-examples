@@ -1,0 +1,25 @@
+# Codex CLI -> GPTZZZ
+#
+# Put this in your USER-level config: ~/.codex/config.toml
+# Codex ignores `model_provider` and `model_providers` in a project-local
+# .codex/config.toml, so a copy inside your repo will not take effect.
+#
+# The key is read from the environment variable named in `env_key`.
+# Do not paste the key into this file.
+#
+#   read -rs GPTZZZ_API_KEY && export GPTZZZ_API_KEY
+#   codex exec "Reply with the single word: ready"      # smoke test, no TUI
+#
+# If your config.toml already has settings, keep the two top-level keys
+# (`model`, `model_provider`) above the first [table] in the file; that is a
+# TOML rule, not a Codex one.
+
+model = "gpt-5.6"            # any ID from GET https://gptzzz.ai/v1/models for your key
+model_provider = "gptzzz"    # custom ID; `openai`, `ollama` and `lmstudio` are reserved
+
+[model_providers.gptzzz]
+name = "GPTZZZ"
+base_url = "https://gptzzz.ai/v1"    # include /v1; Codex appends /responses
+env_key = "GPTZZZ_API_KEY"
+wire_api = "responses"               # the only supported value; GPTZZZ serves /v1/responses
+# stream_idle_timeout_ms = 300000    # default; raise it if long reasoning turns stall and drop

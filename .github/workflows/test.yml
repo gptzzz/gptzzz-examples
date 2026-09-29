@@ -1,0 +1,75 @@
+name: test
+
+# Offline only: every example runs against tests/mock_gateway.py on 127.0.0.1.
+# No secrets are used and no request reaches a real gateway.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: shellcheck
+        run: shellcheck examples/*.sh
+      - name: bash -n
+        run: bash -n examples/curl.sh examples/selftest.sh
+      - name: Codex config parses (tomllib)
+        run: python -c "import tomllib; tomllib.load(open('examples/codex-config.toml', 'rb'))"
+      - name: opencode.json matches the published OpenCode schema
+        run: |
+          python -m pip install --quiet "jsonschema>=4.23"
+          curl -fsSL https://opencode.ai/config.json -o /tmp/opencode.schema.json
+          python - <<'EOF'
+          import json, jsonschema
+          schema = json.load(open("/tmp/opencode.schema.json"))
+          doc = json.load(open("examples/opencode.json"))
+          errors = sorted(jsonschema.Draft202012Validator(schema).iter_errors(doc), key=str)
+          for e in errors:
+              print(e.json_path, e.message)
+          raise SystemExit(len(errors))
+          EOF
+
+  test:
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.9", node: "18" }
+          - { os: ubuntu-latest, python: "3.12", node: "24" }
+          - { os: macos-latest, python: "3.12", node: "24" }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: jq (macOS runners may lack it)
+        if: runner.os == 'macOS'
+        run: command -v jq || brew install jq
+      - name: Install the OpenAI Python SDK for the SDK examples
+        run: python -m pip install --quiet "openai>=1.40"
+      - name: Syntax
+        run: |
+          python -m py_compile examples/*.py examples/stdlib/*.py tests/*.py
+          node --check examples/node_chat.mjs
+      - name: Examples against the mock gateway
+        run: python -m unittest discover -s tests -v
+      - name: node_chat.mjs unit tests
+        run: node --test tests/chat.test.mjs

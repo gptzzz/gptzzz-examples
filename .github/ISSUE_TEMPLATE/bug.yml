@@ -1,0 +1,43 @@
+name: Example does not work / 示例跑不通
+description: An example, config file or the self-test gives a wrong or unexpected result.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste your API key or `Authorization` header.** Remove private prompts too.
+        **不要贴 API key 或 `Authorization` 头**，私密提示词也请删掉。
+  - type: input
+    id: example
+    attributes:
+      label: Which example or file / 哪个示例
+      placeholder: examples/python_tools.py
+    validations:
+      required: true
+  - type: textarea
+    id: selftest
+    attributes:
+      label: Output of `bash examples/selftest.sh` / 自检输出
+      description: It never prints the key. 它不会打印 key。
+      render: text
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected / 实际结果与预期
+      description: Include the exact error text and the HTTP status. 附上报错原文和 HTTP 状态码。
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions and date / 版本与日期
+      placeholder: "2026-10-02, macOS 15, python 3.12, openai 2.x, node 24, codex 0.158"
+    validations:
+      required: true
+  - type: checkboxes
+    id: redacted
+    attributes:
+      label: Checklist
+      options:
+        - label: I removed API keys and Authorization headers from everything above. 我已删除上面所有内容里的 key 和 Authorization 头。
+          required: true

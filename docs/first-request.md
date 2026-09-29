@@ -1,56 +1,82 @@
-# 从一条请求开始接入 GPTZZZ
+# 从一条请求开始接入 GPTZZZ（OpenAI 兼容接口）
 
-此项目用 **GPTZZZ（gptzzz.ai）** 指代目标服务，站方页面使用 **KaiGPT** 名称。接入地址以 [gptzzz.ai 官网](https://gptzzz.ai/)和[站方接入教程](https://gptzzz.ai/blog/openai-api-quickstart/)为依据。此项目的验证范围是**本地模拟响应，真实账号可用性尚未测试**；本文不据此判断模型权限、实际费用或线上性能。
+> **English summary.** Set the key in an environment variable, list the model IDs your key can use with `GET /v1/models`, send one minimal chat request, and check the response fields before adding streaming, tools or a real workload. Keep the base URL at `https://gptzzz.ai/v1`; clients append `/chat/completions` or `/responses` themselves.
 
-**1. 先保持请求最小**
+最后核对：2026-09-29 ｜ [← 返回 README](../README.md)
 
-从账号取得 API Key 和当前可用的模型 ID；模型 ID 没有默认值，产品展示名也不一定是接口 ID。进入项目根目录，在 Bash 或 zsh 中设置：
+这一页只做一件事：用最少的变量发出第一条请求，并确认结果真的可用。后面的流式、工具调用、Codex CLI 等，都建立在这一步通过的基础上。
 
-```sh
-export GPTZZZ_BASE_URL='https://gptzzz.ai/v1'
-export GPTZZZ_MODEL='替换为账号中的模型ID'
-printf 'GPTZZZ API Key: '
-read -r -s GPTZZZ_API_KEY
-printf '\n'
-export GPTZZZ_API_KEY
+## 1. 准备：key 放进环境变量
 
-python3 scripts/chat.py --prompt '用一句话解释 API 中转站'
+```bash
+read -rs GPTZZZ_API_KEY && export GPTZZZ_API_KEY   # 粘贴 key 后回车，屏幕不显示，也不进 shell 历史
+echo ${#GPTZZZ_API_KEY}                             # 只打印长度，确认没有粘贴成空值
 ```
 
-静默输入可以避免把密钥直接写进这条命令的历史记录，但环境变量仍需妥善保管；不要开启会回显变量的 shell 跟踪。不要将密钥写进源文件、提交到 Git 或贴进反馈截图。
+- 不要把 key 写进代码、`.env` 以外的文件、截图或 Git 提交。本仓库的 `.gitignore` 已忽略 `.env`。
+- 不要开 `set -x` 之类会回显变量的调试选项。
+- 建议给测试单独建一个 key，用完可以在控制台作废。
 
-Base URL 停在 `/v1`，目标是 `POST https://gptzzz.ai/v1/chat/completions`。请求使用 `Authorization: Bearer <API_KEY>` 和 `Content-Type: application/json`，最小正文如下，其中模型占位符由账号配置替换：
+## 2. 先查模型 ID，不要猜
 
-```json
-{
-  "model": "<MODEL_ID_FROM_ACCOUNT>",
-  "messages": [
-    {"role": "user", "content": "用一句话解释 API 中转站"}
-  ],
-  "stream": false
-}
+```bash
+bash examples/curl.sh models
 ```
 
-先不加入历史对话、工具或其他生成参数，让问题范围收敛到地址、鉴权、模型和消息结构。把完整接口路径填进 Base URL，可能造成重复拼接。
+返回的每一行就是一个可以填进 `model` 字段的 ID。能用哪些 ID 取决于 key 所在的分组，**产品页上的展示名不一定等于接口 ID**。2026-09-29 返回的对话模型包括 `gpt-6`、`gpt-6-sol`、`gpt-6-luna`、`gpt-6-astra`、`gpt-5.6`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna`、`gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`；`gpt-image-*` 是图像模型，不能用于对话。
 
-**2. 验证输出，而不只看进程结束**
+`GET /v1/models` 一般不计费，适合用来确认 key 和地址都对。
 
-先确认请求是否获得正常 HTTP 响应，再检查 JSON 是否包含可用结果。对本文的普通文本任务，应检查 `choices[0].message.content` 是否有文字、内容是否回应问题，并查看结束原因；`length` 表示输出触及限制，不能当成完整回答验收。HTTP 成功但结构异常，应单独记录。
+## 3. 发一条最小请求
 
-当前示例 CLI 只输出文字结果或简要错误，不展示结束原因、`model`、`usage` 或请求 ID。上述扩展验收需要从账户调用记录查看，或在受控环境中扩展脱敏采集；没有采集的字段应记为“未采集”，不能断言服务端没有返回。模型字段可能使用别名，不能单靠名称证明上游来源；用量字段也不等同于实际账单。
+Base URL 写到 `/v1` 为止，路径由客户端拼接：`POST https://gptzzz.ai/v1/chat/completions`。
 
-**3. 一次只扩大一个变量**
-
-基线成立后，再逐项增加提示词长度、对话轮数或业务输入，每次保留前一版请求作对照。非流式文本成功不能证明流式、工具调用、其他资源路径同样可用，也不宜立即提高并发。
-
-需要辅助查询模型时，可运行：
-
-```sh
-python3 scripts/list_models.py
+```bash
+curl -sS https://gptzzz.ai/v1/chat/completions \
+  -H "Authorization: Bearer $GPTZZZ_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-5.6", "messages": [{"role": "user", "content": "Reply with the single word: pong"}]}'
 ```
 
-该辅助入口对应 `GET /v1/models`，依据是[站方错误码文档](https://gptzzz.ai/docs/api-error-codes/)中的建议，**尚未用真实账号实测**。若失败，回到控制台核对模型 ID 与权限，不要因此推断整个聊天服务不可用。
+最小正文只有 `model` 和 `messages`。先别加系统提示、历史对话、工具或采样参数，这样出错时只需要排查地址、鉴权、模型三件事。
 
-**4. 留下可复现的请求日志**
+同一件事的其他写法：
 
-记录时间与时区、脚本版本、脱敏后的最终 URL、模型 ID、HTTP 状态、耗时、结束原因和可用的请求 ID。提示词涉及业务数据时，只留复现必需的脱敏片段；日志不保存 Authorization。遇到失败时同时记录是否已收到响应头、部分正文以及是否曾重发，便于按[排错教程](troubleshooting.md)继续定位。
+| 写法 | 文件 | 依赖 |
+|---|---|---|
+| OpenAI 官方 Python SDK | [examples/python_chat.py](../examples/python_chat.py) | `pip install "openai>=1.40"` |
+| Node.js 原生 `fetch` | [examples/node_chat.mjs](../examples/node_chat.mjs) | Node.js 18+，无 npm 依赖 |
+| 只用 Python 标准库 | [examples/stdlib/chat.py](../examples/stdlib/chat.py) | Python 3.9+，无依赖；不自动重试、不跟随重定向。请求显式带 `User-Agent`（有些 CDN 会拒绝 urllib 的默认值），2026-09-29 复测通过，见[复测记录](compatibility-log.md) |
+
+用 SDK 时，和 OpenAI 官方接口相比只改两处：`base_url="https://gptzzz.ai/v1"`，以及 key 从 `GPTZZZ_API_KEY` 读取。
+
+## 4. 看结果，而不只看“没报错”
+
+一条请求算通过，至少要满足：
+
+| 检查项 | 在哪里看 | 说明 |
+|---|---|---|
+| HTTP 200 | 状态码 | 401 看 key，404 看路径和模型 ID，详见 [troubleshooting.md](troubleshooting.md) |
+| 有文字 | `choices[0].message.content` | 空字符串也算失败 |
+| 正常结束 | `choices[0].finish_reason` | `stop` 正常；`length` 表示被截断，不能当完整回答 |
+| 有用量 | `usage.prompt_tokens`、`completion_tokens`、`total_tokens` | 推理模型的思考 token 计入 `completion_tokens` |
+
+`model` 字段可能返回别名或实际路由到的型号，不能单靠它判断上游来源；`usage` 是本次请求的计量，最终以控制台账单为准。
+
+## 5. 一次只加一个变量
+
+第一条请求通过后，按下面的顺序逐项扩展，每一步都能用本仓库的示例单独验证：
+
+1. 流式输出：`bash examples/curl.sh stream` 或 `python examples/python_stream.py`，确认最后是 usage 块和 `data: [DONE]`。
+2. 工具调用：`python examples/python_tools.py`，确认 `finish_reason` 是 `tool_calls`，把结果发回去后能拿到最终回答。
+3. JSON 模式：`python examples/python_json_mode.py`。
+4. Responses API：`python examples/python_responses.py`。Codex CLI 只走这个接口。
+5. 图片输入：`python examples/python_image.py`。
+
+想一次查完，就跑 `bash examples/selftest.sh`（6 项，其中 5 次小额计费请求）。
+
+## 6. 留一份可复现的记录
+
+出问题时记下：时间和时区、脚本或 SDK 版本、脱敏后的完整 URL、模型 ID、HTTP 状态、耗时、`finish_reason`、响应头里的请求 ID（如果有）。**不要记录 `Authorization` 头和完整 key**，提示词只保留复现需要的部分。
+
+从 Key、Base URL 到首个请求的完整接入步骤，见 GPTZZZ 站内教程：[API 中转站怎么用：从 Key、Base URL 到首个请求](https://gptzzz.ai/blog/api-zhongzhuan-how-to-use/?utm_source=github&utm_medium=repo&utm_campaign=gptzzz-examples&utm_content=first_request)（维护方撰写）。

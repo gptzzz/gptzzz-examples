@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Account, billing or key problems / 账户、计费或 key 的问题
+    url: https://gptzzz.ai/docs/
+    about: This repository only covers the example code. Account questions go to GPTZZZ support. 本仓库只处理示例代码的问题。
