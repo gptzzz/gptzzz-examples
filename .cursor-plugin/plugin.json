@@ -1,0 +1,21 @@
+{
+  "name": "gptzzz",
+  "version": "2.1.0",
+  "description": "Rules, skills and a command that help the Cursor agent call the GPTZZZ OpenAI-compatible API (https://gptzzz.ai/v1): base URL, key handling, model IDs, client configs and error triage. Works with any OpenAI-compatible endpoint.",
+  "author": {
+    "name": "GPTZZZ",
+    "email": "support@gptzzz.ai"
+  },
+  "homepage": "https://gptzzz.ai/en/",
+  "repository": "https://github.com/gptzzz/gptzzz-examples",
+  "license": "MIT",
+  "keywords": [
+    "openai-compatible",
+    "api-gateway",
+    "base-url",
+    "codex-cli",
+    "opencode",
+    "error-handling"
+  ],
+  "logo": "assets/logo.png"
+}

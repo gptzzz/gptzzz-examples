@@ -9,7 +9,13 @@ curl, Python and Node.js, plus config files for Codex CLI, OpenCode and Cline.
 `examples/selftest.sh` checks any OpenAI-compatible endpoint.
 
 If the user wants you to set up a client against their gateway, follow
-`skills/openai-compatible-gateway/SKILL.md`.
+`skills/openai-compatible-gateway/SKILL.md`. If a request against the gateway
+fails, follow `skills/gptzzz-error-triage/SKILL.md`.
+
+The repository is also a Cursor plugin: `.cursor-plugin/plugin.json`, `rules/`,
+`skills/` and `commands/`. Keep each rule and command short: cursor.directory's
+"Add to Cursor" deeplink stops working above 8,000 URL characters, and the tests
+check the encoded length.
 
 ## Commands
 
