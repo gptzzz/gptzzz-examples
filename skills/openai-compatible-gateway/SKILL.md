@@ -37,6 +37,11 @@ endpoint that implements the OpenAI API: change the base URL and variable name.
      or the project's `opencode.json`; the key is `"{env:GPTZZZ_API_KEY}"`.
    - Python / Node SDKs: set `base_url` / `baseURL` and read the key from the
      environment; see `examples/python_chat.py` and `examples/node_chat.mjs`.
+   - Cursor's own chat models are not configured through files. Its own-key
+     (BYOK) settings are in Cursor Settings > Models, cover chat models only
+     (Tab completion keeps Cursor's models), and Cursor sends those requests
+     from its servers, so an endpoint reachable only from the user's machine or
+     LAN will not work there. Point the user to that screen instead of editing files.
 4. **Verify the endpoint**: `bash examples/selftest.sh` (six checks, five small
    billed requests). Exit code = number of failed checks.
 5. **Verify the client** with one short request, for Codex:

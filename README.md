@@ -9,9 +9,9 @@ Tested, runnable examples for **GPTZZZ**, an OpenAI-compatible API gateway (API 
 
 **Links / 链接：** [GPTZZZ 接入文档 / Docs](https://gptzzz.ai/docs/?utm_source=github&utm_medium=repo&utm_campaign=gptzzz-examples&utm_content=top) · [gptzzz.ai](https://gptzzz.ai/?utm_source=github&utm_medium=repo&utm_campaign=gptzzz-examples&utm_content=top) · [English](#english) · [中文说明](#中文说明)
 
-> **Disclosure:** This repository is maintained by the GPTZZZ team (the author works on GPTZZZ). GPTZZZ is an independent third-party service. It is not affiliated with, endorsed by, or sponsored by OpenAI, or by the Codex CLI, OpenCode or Cline projects; their names appear here only to describe compatibility.
+> **Disclosure:** This repository is maintained by the operator of GPTZZZ. GPTZZZ is an independent third-party service. It is not affiliated with, endorsed by, or sponsored by OpenAI, or by Cursor or the Codex CLI, OpenCode or Cline projects; their names appear here only to describe compatibility.
 >
-> **披露：** 本仓库由 GPTZZZ 团队维护，作者参与 GPTZZZ 运营。GPTZZZ 是独立的第三方服务，与 OpenAI 以及 Codex CLI、OpenCode、Cline 项目均无隶属、背书或赞助关系，文中提到这些名称只是为了说明兼容方式。
+> **披露：** 本仓库由 GPTZZZ 运营方维护。GPTZZZ 是独立的第三方服务，与 OpenAI、Cursor 以及 Codex CLI、OpenCode、Cline 项目均无隶属、背书或赞助关系，文中提到这些名称只是为了说明兼容方式。
 
 ---
 
@@ -95,6 +95,10 @@ Chat model IDs returned on 2026-09-29: `gpt-6`, `gpt-6-sol`, `gpt-6-luna`, `gpt-
 **Cline**: see [`examples/cline.md`](examples/cline.md). **Dify**: use the GPTZZZ model provider plugin, [gptzzz/dify-plugin-gptzzz](https://github.com/gptzzz/dify-plugin-gptzzz).
 
 **Coding agents**: [`skills/openai-compatible-gateway/SKILL.md`](skills/openai-compatible-gateway/SKILL.md) tells an agent how to write these configs and verify them with `selftest.sh`; [`AGENTS.md`](AGENTS.md) covers working in this repository.
+
+**Cursor plugin** ([`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json)): this repository is also a Cursor plugin. It gives the Cursor agent one rule ([`rules/openai-compatible-client.mdc`](rules/openai-compatible-client.mdc): base URL, key handling, model IDs, errors and retries in code), two skills (`openai-compatible-gateway` and [`gptzzz-error-triage`](skills/gptzzz-error-triage/SKILL.md)) and one command ([`/gptzzz-check`](commands/gptzzz-check.md), which lists your models and sends a billed request only after you agree). It does not switch Cursor's own chat models to GPTZZZ.
+- Try it locally: `git clone https://github.com/gptzzz/gptzzz-examples.git ~/.cursor/plugins/local/gptzzz`, run **Developer: Reload Window**, then check **Customize** for the rule, skills and command.
+- Start Cursor from a shell where `GPTZZZ_API_KEY` is exported; the command and skills read the key from there.
 
 ### Troubleshooting
 
@@ -184,6 +188,7 @@ bash examples/selftest.sh                           # 6 项自检（其中 5 次
 - **Cline**：API Provider 选 "OpenAI Compatible"，Base URL 填 `https://gptzzz.ai/v1`，填入 key 和模型 ID。价格字段不确定就留空。详见 [`examples/cline.md`](examples/cline.md)。
 - **Dify**：用 GPTZZZ 的模型供应商插件 [gptzzz/dify-plugin-gptzzz](https://github.com/gptzzz/dify-plugin-gptzzz)，已合并进 Dify 插件仓库。
 - **让编程代理自己配**：把 [`skills/openai-compatible-gateway/SKILL.md`](skills/openai-compatible-gateway/SKILL.md) 交给 Codex、OpenCode 等代理，它会写配置并用 `selftest.sh` 验证。
+- **Cursor 插件**：本仓库同时是一个 Cursor 插件（[`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json)），包含 1 条规则（[`rules/openai-compatible-client.mdc`](rules/openai-compatible-client.mdc)：代码里怎么写 Base URL、读 key、取模型 ID、处理错误和重试）、2 个技能（`openai-compatible-gateway`、[`gptzzz-error-triage`](skills/gptzzz-error-triage/SKILL.md)）和 1 个命令（[`/gptzzz-check`](commands/gptzzz-check.md)：列出模型，计费请求先征得你同意）。它不会把 Cursor 自带的对话模型切换到 GPTZZZ。本地试用：`git clone https://github.com/gptzzz/gptzzz-examples.git ~/.cursor/plugins/local/gptzzz`，执行 **Developer: Reload Window**，再到 **Customize** 里确认；请从已 `export GPTZZZ_API_KEY` 的 shell 启动 Cursor。
 
 ### 常见问题：中转 base_url、404 与 401 排查
 

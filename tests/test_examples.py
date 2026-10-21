@@ -250,7 +250,7 @@ class RepositoryRules(unittest.TestCase):
     def files(self):
         for path in ROOT.rglob("*"):
             if path.is_file() and ".git" not in path.parts and "__pycache__" not in path.parts:
-                if path.suffix in {".md", ".py", ".sh", ".mjs", ".json", ".toml", ".yml", ".yaml", ".txt", ""}:
+                if path.suffix in {".md", ".mdc", ".py", ".sh", ".mjs", ".json", ".toml", ".yml", ".yaml", ".txt", ""}:
                     yield path
 
     def test_no_banned_words(self):
@@ -266,14 +266,68 @@ class RepositoryRules(unittest.TestCase):
         self.assertEqual(len(LINK_RE.findall(readme)), 2, "README must link gptzzz.ai exactly twice (top line)")
         docs = sum(len(LINK_RE.findall(p.read_text(encoding="utf-8"))) for p in (ROOT / "docs").glob("*.md"))
         self.assertLessEqual(docs, 2, "docs/ may link gptzzz.ai at most twice")
-        for path in list((ROOT / "examples").rglob("*.md")) + list((ROOT / "skills").rglob("*.md")):
+        no_links = [ROOT / "examples", ROOT / "skills", ROOT / "rules", ROOT / "commands"]
+        for path in [p for d in no_links for p in d.rglob("*.md*")]:
             self.assertEqual(LINK_RE.findall(path.read_text(encoding="utf-8")), [], f"{path} links gptzzz.ai")
 
     def test_no_prices_or_discounts(self):
         pattern = re.compile(r"[¥$€]\s?\d|\d+\s?%\s?off\b|\d(\.\d)?\s?折|\d+\s?%\s?(折扣|优惠)", re.I)
-        for path in ROOT.rglob("*.md"):
+        for path in list(ROOT.rglob("*.md")) + list(ROOT.rglob("*.mdc")):
             for n, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
                 self.assertIsNone(pattern.search(line), f"{path.relative_to(ROOT)}:{n}: {line.strip()[:80]}")
+
+
+PLUGIN = ROOT / ".cursor-plugin" / "plugin.json"
+# cursor.directory falls back from its "Add to Cursor" deeplink to copy-and-paste
+# above this URL length (MAX_DEEPLINK_URL_LENGTH in cursor/community-plugins).
+MAX_DEEPLINK_URL_LENGTH = 8000
+
+
+def frontmatter(path: Path) -> tuple[dict[str, str], str]:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return {}, text
+    end = text.index("\n---\n", 4)
+    data = {}
+    for line in text[4:end].splitlines():
+        key, sep, value = line.partition(":")
+        if sep and value.strip():
+            data[key.strip()] = value.strip()
+    return data, text[end + 5 :].strip()
+
+
+class CursorPlugin(unittest.TestCase):
+    def test_manifest(self):
+        manifest = json.loads(PLUGIN.read_text(encoding="utf-8"))
+        self.assertRegex(manifest["name"], r"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$")
+        self.assertTrue(manifest["homepage"].startswith("https://"))
+        self.assertEqual(manifest["repository"], "https://github.com/gptzzz/gptzzz-examples")
+        self.assertTrue((ROOT / manifest["logo"]).is_file())
+
+    def test_components_have_frontmatter(self):
+        rules = sorted((ROOT / "rules").glob("*.mdc"))
+        commands = sorted((ROOT / "commands").glob("*.md"))
+        skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
+        self.assertTrue(rules and commands and skills)
+        for path in rules + commands + skills:
+            data, body = frontmatter(path)
+            self.assertTrue(data.get("description"), f"{path.relative_to(ROOT)} needs a description")
+            self.assertTrue(body, f"{path.relative_to(ROOT)} is empty")
+        for path in skills:
+            self.assertEqual(frontmatter(path)[0].get("name"), path.parent.name)
+        for path in commands:
+            self.assertEqual(frontmatter(path)[0].get("name"), path.stem)
+
+    def test_deeplink_length(self):
+        from urllib.parse import quote
+
+        safe = "-_.!~*'()"  # what JavaScript's encodeURIComponent leaves alone
+        for kind, paths in (("rule", (ROOT / "rules").glob("*.mdc")), ("command", (ROOT / "commands").glob("*.md"))):
+            for path in paths:
+                name = quote(path.stem, safe=safe)
+                text = quote(frontmatter(path)[1], safe=safe)
+                url = f"cursor://anysphere.cursor-deeplink/{kind}?name={name}&text={text}"
+                self.assertLessEqual(len(url), MAX_DEEPLINK_URL_LENGTH, f"{path.relative_to(ROOT)}: {len(url)}")
 
 
 if __name__ == "__main__":

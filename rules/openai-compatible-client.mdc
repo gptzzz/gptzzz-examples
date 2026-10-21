@@ -1,0 +1,17 @@
+---
+description: Calling an OpenAI-compatible API (GPTZZZ by default) from code - base URL, API key, model IDs, errors, retries, streaming
+alwaysApply: false
+---
+
+When you write or review code that calls an OpenAI-compatible endpoint (GPTZZZ by default):
+
+- Base URL: read `GPTZZZ_BASE_URL`, default `https://gptzzz.ai/v1`. It ends at `/v1`; SDKs append `/chat/completions` or `/responses`. Never produce `/v1/v1/...` or put a full endpoint path in `base_url`.
+- API key: read it only from the `GPTZZZ_API_KEY` environment variable. Never hard-code, log or print it, never put it in a URL query string, never commit `.env` files. To check it is set, print its length.
+- Auth header: `Authorization: Bearer <key>`.
+- Model IDs: take them from `GET /v1/models` or from config, not from memory. What a key can use depends on its group.
+- Errors: read both body shapes, OpenAI's `{"error": {"message": ...}}` and the flat `{"code": ..., "message": ...}` that GPTZZZ returns for `401 INVALID_API_KEY`. Show the status and message to the caller.
+- Retries: never retry 400, 401, 403 or 404. Retry 429 and 5xx with exponential backoff, jitter and a maximum attempt count, in one layer only (turn off SDK retries if your code retries). A request that timed out after it was sent may already be processed and billed.
+- Streaming: send `stream_options: {"include_usage": true}`; the stream is complete only after `data: [DONE]`; check `finish_reason`.
+- `reasoning_effort`: allowed values differ per model. Do not hard-code a list; surface the 400 message, which names the allowed values.
+- Embeddings: GPTZZZ does not serve `/v1/embeddings`. RAG code needs a separate embeddings provider.
+- Bare HTTP clients (Python `urllib`): send an explicit `User-Agent`. On 2026-09-29 the CDN in front of the gateway rejected the default `Python-urllib/3.x` with 403 (error code 1010) before the request reached the gateway.

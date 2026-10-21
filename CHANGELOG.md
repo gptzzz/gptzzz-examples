@@ -2,6 +2,26 @@
 
 All notable changes to this repository. Dates are UTC+8.
 
+## [2.1.0] - 2026-10-22
+
+The repository is now also a Cursor plugin.
+
+### Added
+- `.cursor-plugin/plugin.json`, `assets/logo.png` and its source `assets/logo.svg`.
+- `rules/openai-compatible-client.mdc`: base URL, key handling, model IDs, both error
+  shapes, retries and streaming for code that calls the gateway.
+- `skills/gptzzz-error-triage/SKILL.md`: triage by "no status" and HTTP status, using
+  the results in `docs/troubleshooting.md` and `docs/compatibility-log.md`.
+- `commands/gptzzz-check.md`: lists model IDs; sends one billed request only after
+  the user agrees. The key goes to curl through a pipe.
+- Tests for the plugin files (manifest, frontmatter, size limit for cursor.directory
+  deeplinks); `make lint` parses the manifest.
+
+### Changed
+- `skills/openai-compatible-gateway/SKILL.md`: a note on Cursor's own-key settings.
+- README: Cursor plugin notes; the disclosure now says the repository is maintained
+  by the operator of GPTZZZ and names Cursor.
+
 ## [2.0.0] - 2026-09-29
 
 The repository was renamed from `gptzzz-api-examples` to `gptzzz-examples`; the old

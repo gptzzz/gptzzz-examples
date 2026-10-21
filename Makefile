@@ -21,6 +21,7 @@ lint:
 	$(PYTHON) -m py_compile examples/*.py examples/stdlib/*.py tests/*.py
 	$(NODE) --check examples/node_chat.mjs
 	$(PYTHON) -c "import json; json.load(open('examples/opencode.json'))"
+	$(PYTHON) -c "import json; json.load(open('.cursor-plugin/plugin.json'))"
 	@$(PYTHON) -c "import sys, tomllib; tomllib.load(open('examples/codex-config.toml', 'rb'))" 2>/dev/null \
 	  && echo "codex-config.toml parses" || echo "tomllib needs Python 3.11+, TOML check skipped"
 
